@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Lease Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* ORIX Logo Colors based on provided image */
+      --orix-logo-blue: #003366; /* Dark blue from ORIX logo text */
+      --orix-logo-red: #E30613;  /* Red from ORIX logo symbol */
+
+      /* General UI Colors, adapted to ORIX theme */
+      --orix-white: #FFFFFF;
+      --orix-light-grey: #F8FBFD; /* Very light background for contrast */
+      --orix-dark-grey: #333333;
+      --orix-border-color: #DDEBF5; /* Soft, slightly bluish border */
+      --input-bg-editable: #ECF7FF; /* Light blue tint for editable inputs */
+      --input-bg-readonly: #EAECEF; /* Slightly darker grey for readonly */
+      --highlight-text-color: var(--orix-logo-blue); /* Emphasize calculated values */
+    }
+
+    body {
+      font-family: 'Kanit', sans-serif;
+      margin: 0;
+      padding: 10px;
+      background: var(--orix-light-grey);
+      color: var(--orix-dark-grey);
+      line-height: 1.5;
+      font-size: 1.05em;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 10px auto;
+      background: var(--orix-white);
+      padding: 18px;
+      border-radius: 10px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--orix-border-color);
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--orix-logo-blue); /* Main title in ORIX blue */
+      margin-bottom: 20px;
+      font-size: 2.2em;
+      font-weight: 600;
+    }
+
+    h2 {
+      margin-top: 25px;
+      margin-bottom: 12px;
+      color: var(--orix-logo-blue); /* Section titles in ORIX blue */
+      font-size: 1.6em;
+      border-bottom: 1px solid var(--orix-border-color); /* Lighter border for sections */
+      padding-bottom: 5px;
+    }
+
+    table {
+      width: 100%;
+      margin-bottom: 18px;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+    }
+
+    td {
+      padding: 8px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--orix-border-color);
+    }
+
+    td.label {
+      width: 45%;
+      font-weight: 600;
+      color: var(--orix-dark-grey);
+    }
+
+    td.value {
+      width: 55%;
+    }
+
+    td.value input:not([readonly]),
+    td.value select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--orix-border-color);
+      border-radius: 6px;
+      background: var(--input-bg-editable); /* Light blue background for editable */
+      color: var(--orix-dark-grey);
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+      text-align: right;
+      font-size: 1.05em;
+    }
+
+    td.value input#carInfo {
+      text-align: left;
+    }
+
+    td.value input#termYears,
+    td.value input#comPercent {
+      -moz-appearance: textfield;
+    }
+    td.value input#termYears::-webkit-outer-spin-button,
+    td.value input#termYears::-webkit-inner-spin-button,
+    td.value input#comPercent::-webkit-outer-spin-button,
+    td.value input#comPercent::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    td.value input::placeholder {
+      color: #aaa;
+    }
+
+    td.value input:not([readonly]):focus,
+    td.value select:focus {
+      border-color: var(--orix-logo-blue); /* Focus highlight in ORIX blue */
+      box-shadow: 0 0 0 0.2rem rgba(0, 51, 102, 0.2); /* Softer shadow on focus */
+      outline: none;
+    }
+
+    td.value input[readonly] {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--orix-border-color);
+      border-radius: 6px;
+      background-color: var(--input-bg-readonly); /* Light grey for readonly */
+      font-weight: bold;
+      color: var(--highlight-text-color); /* Calculated values in ORIX blue */
+      text-align: right;
+      box-sizing: border-box;
+      font-size: 1.05em;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      font-size: 1.15em;
+      background-color: var(--orix-logo-blue); /* Default button in ORIX blue */
+      color: var(--orix-white);
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+      background-color: #002244; /* Darker ORIX blue on hover */
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .button-group button:nth-of-type(2) { /* Style for the second button */
+      background-color: var(--orix-logo-red); /* Second button in ORIX red */
+    }
+
+    .button-group button:nth-of-type(2):hover {
+      background-color: #B5050F; /* Darker ORIX red on hover */
+    }
+
+    .button-group button:nth-of-type(3) { /* Style for the third button (new) */
+      background-color: #28a745; /* Green for new button */
+    }
+
+    .button-group button:nth-of-type(3):hover {
+      background-color: #218838;
+    }
+
+    #downPercentDisplay {
+      font-weight: bold;
+      color: var(--highlight-text-color); /* Match calculated values */
+      font-size: 1.05em;
+    }
+
+    /* Responsive adjustments for smaller screens (e.g., mobile phones) */
+    @media screen and (max-width: 768px) {
+      body {
+        padding: 8px;
+        font-size: 0.95em;
+      }
+      .container {
+        margin: 8px;
+        padding: 12px;
+      }
+
+      h1 {
+        font-size: 1.8em;
+        margin-bottom: 15px;
+      }
+
+      h2 {
+        font-size: 1.4em;
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+
+      table {
+        border-spacing: 0;
+        margin-bottom: 12px;
+      }
+
+      td {
+        padding: 6px 0;
+      }
+
+      td.label {
+        margin-bottom: 4px;
+        font-size: 0.9em;
+      }
+
+      td.value input:not([readonly]),
+      td.value select,
+      td.value input[readonly] {
+        font-size: 0.95em;
+        padding: 7px 8px;
+      }
+
+      table tr {
+        margin-bottom: 12px;
+        padding: 8px;
+        border-radius: 6px;
+      }
+      button {
+        padding: 10px;
+        font-size: 1em;
+        margin-top: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Lease Calculator</h1>
+
+  <h2>ข้อมูลเบื้องต้น</h2>
+  <table>
+    <tr><td class="label">ข้อมูลรถ</td><td class="value"><input id="carInfo" type="text" value=""></td></tr>
+    <tr><td class="label">ราคารถ</td><td class="value"><input id="carPrice" type="text" value="0.00"></td></tr>
+    <tr><td class="label">ส่วนลด</td><td class="value"><input id="discount" type="text" value="0.00"></td></tr>
+    <tr><td class="label">Option</td><td class="value"><input id="option" type="text" value="0.00"></td></tr>
+    <tr><td class="label">ราคาสุทธิ</td><td class="value"><input id="totalAmount" readonly></td></tr>
+  </table>
+
+  <h2>เงินดาวน์</h2>
+  <table>
+    <tr>
+      <td class="label">รูปแบบ</td>
+      <td class="value">
+        <select id="downType" onchange="calculate()">
+          <option value="percent">เป็น %</option>
+          <option value="amount">เป็นจำนวนเงิน</option>
+        </select>
+      </td>
+    </tr>
+    <tr><td class="label">กรอก % หรือ จำนวน</td><td class="value"><input id="downInput" type="text" value="0.00"></td></tr>
+    <tr><td class="label">เงินดาวน์</td><td class="value"><input id="downAmount" readonly></td></tr>
+    <tr><td class="label">เงินดาวน์คิดเป็น</td><td class="value"><span id="downPercentDisplay">-</span></td></tr>
+  </table>
+
+  <h2>ดอกเบี้ยและระยะเวลา</h2>
+  <table>
+    <tr><td class="label">อัตราดอกเบี้ย (%)</td><td class="value"><input id="interestRate" type="text" value="0.00"></td></tr>
+    <tr><td class="label">จำนวนปี</td><td class="value"><input id="termYears" type="number" step="1" value="0"></td></tr>
+  </table>
+
+  <h2>ค่าคอมมิชชั่น</h2>
+  <table>
+    <tr><td class="label">คิดค่าคอมจาก</td>
+      <td class="value">
+        <select id="comBase" onchange="calculate()">
+          <option value="interest">ดอกเบี้ยรวม</option>
+          <option value="finance">ยอดจัด</option>
+        </select>
+      </td>
+    </tr>
+    <tr><td class="label">Commission (%)</td><td class="value"><input id="comPercent" type="number" step="1" value="0"></td></tr>
+    <tr><td class="label">ค่าคอม (ที่คำนวณ)</td><td class="value"><input id="calculatedCommission" readonly></td></tr>
+    <tr><td class="label">Extra Commission</td><td class="value"><input id="extra" type="text" value="0.00"></td></tr>
+    <tr><td class="label">QS Extra Cost</td><td class="value"><input id="qsExtra" readonly></td></tr>
+  </table>
+
+  <h2>ผลลัพธ์</h2>
+  <table>
+    <tr><td class="label">ยอดจัด</td><td class="value"><input id="financeAmt" readonly></td></tr>
+    <tr><td class="label">ดอกเบี้ยต่อปี</td><td class="value"><input id="intPA" readonly></td></tr>
+    <tr><td class="label">ดอกเบี้ยรวม</td><td class="value"><input id="intTotal" readonly></td></tr>
+    <tr><td class="label">ยอดจัดรวม</td><td class="value"><input id="financeTotalWithInterest" readonly></td></tr>
+    <tr><td class="label">ค่างวด (In VAT)</td><td class="value"><input id="leaseInVat" readonly></td></tr>
+    <tr><td class="label">ค่างวด (Ex VAT)</td><td class="value"><input id="leaseExVat" readonly></td></tr>
+    <tr><td class="label">TR (Effective %)</td><td class="value"><input id="trRate" readonly></td></tr>
+  </table>
+
+  <h2>QS Information</h2>
+  <table>
+    <tr><td class="label">ข้อมูลรถ</td><td class="value"><input id="qsCarInfo" readonly></td></tr>
+    <tr><td class="label">ราคารถ</td><td class="value"><input id="qsCarPrice" readonly></td></tr>
+    <tr><td class="label">ส่วนลด</td><td class="value"><input id="qsDiscount" readonly></td></tr>
+    <tr><td class="label">Option</td><td class="value"><input id="qsOption" readonly></td></tr>
+    <tr><td class="label">เงินดาวน์</td><td class="value"><input id="qsDownAmount" readonly></td></tr>
+    <tr><td class="label">เงินดาวน์คิดเป็น %</td><td class="value"><input id="qsDownPercent" readonly></td></tr>
+    <tr><td class="label">TR (Effective %)</td><td class="value"><input id="qsTrRate" readonly></td></tr>
+    <tr><td class="label">จำนวนปี</td><td class="value"><input id="qsTermYears" readonly></td></tr>
+    <tr><td class="label">Deposit</td><td class="value"><input id="qsDeposit" readonly></td></tr>
+    <tr><td class="label">RV</td><td class="value"><input id="qsRV" readonly></td></tr>
+    <tr><td class="label">TR Dep</td><td class="value"><input id="qsTrDep" readonly></td></tr>
+  </table>
+
+  <div class="button-group">
+    <button onclick="calculate()">คำนวณ</button>
+    <button onclick="calculateDownForTargetLease(36000)">📌 คำนวณเงินดาวน์สำหรับค่างวด 36,000 บาท</button>
+    <button onclick="generateQuotation()">สร้างใบเสนอราคา</button>
+  </div>
+</div>
+
+<script>
+// Helper functions
+function format(n) {
+  if (isNaN(n) || n === null) return "0.00";
+  return parseFloat(n).toLocaleString('en-US', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+}
+
+function formatNoDecimal(n) {
+  if (isNaN(n) || n === null) return "0";
+  return parseFloat(n).toLocaleString('en-US', {
+    minimumFractionDigits: 0, maximumFractionDigits: 0
+  });
+}
+
+function format4(n) {
+  if (isNaN(n) || n === null) return "0.0000";
+  return parseFloat(n).toLocaleString('en-US', {
+    minimumFractionDigits: 4, maximumFractionDigits: 4
+  });
+}
+
+function uncomma(s) {
+  // Handles both comma-formatted and non-formatted numbers, returns 0 if invalid
+  const cleaned = String(s).replace(/,/g, '');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+}
+
+// Function to calculate IRR (Effective Interest Rate per period)
+// nper: Total number of payment periods (e.g., months)
+// pmt: The payment made each period (e.g., monthly lease payment)
+// pv: The present value, or the lump-sum amount that a series of future payments is worth right now (e.g., initial finance amount)
+// fv: The future value (optional, default 0)
+// type: When payments are due (0 for end of period, 1 for beginning of period)
+function calculateIRR(nper, pmt, pv, fv = 0, type = 0) {
+  if (pmt === 0) return NaN; // Avoid division by zero or infinite loop
+  const guess = 0.05 / 12; // Initial guess for monthly rate (5% annual / 12 months)
+  let rate = guess;
+  const maxIter = 200; // Increased iterations for better convergence
+  const tol = 1e-7; // Increased tolerance for precision
+
+  for (let i = 0; i < maxIter; i++) {
+    let f = pv; // Start with present value
+    let df = 0;  // Derivative
+
+    for (let t = 1; t <= nper; t++) {
+      const discountFactor = Math.pow(1 + rate, t - (type === 1 ? 1 : 0));
+      f += pmt / discountFactor;
+      df += -(t - (type === 1 ? 1 : 0)) * pmt / Math.pow(1 + rate, t + 1 - (type === 1 ? 1 : 0));
+    }
+    f += fv / Math.pow(1 + rate, nper);
+    df += -nper * fv / Math.pow(1 + rate, nper + 1);
+
+    if (Math.abs(f) < tol) return rate; // Converged
+
+    const newRate = rate - f / df;
+    if (Math.abs(newRate - rate) < tol) return newRate; // Converged
+    if (isNaN(newRate) || !isFinite(newRate)) return NaN; // Avoid infinite loop with invalid rates
+    rate = newRate;
+  }
+  return NaN; // Could not converge
+}
+
+
+function showDownPercent() {
+  const total = uncomma(document.getElementById("totalAmount").value);
+  const down = uncomma(document.getElementById("downAmount").value);
+  const result = total > 0 ? (down / total * 100) : 0;
+  document.getElementById("downPercentDisplay").innerText = `(${format4(result)}%)`;
+  document.getElementById("qsDownPercent").value = format4(result) + '%';
+}
+
+function calculate() {
+  // Get all input values, converting to number immediately
+  const getVal = id => uncomma(document.getElementById(id).value);
+  const getIntVal = id => parseInt(uncomma(document.getElementById(id).value)) || 0;
+
+  const carInfo = document.getElementById('carInfo').value;
+  const car = getVal('carPrice');
+  const discount = getVal('discount');
+  const option = getVal('option');
+  const total = car - discount + option;
+  document.getElementById('totalAmount').value = format(total);
+
+  const downType = document.getElementById('downType').value;
+  const downInput = getVal('downInput');
+  let down = 0;
+  if (downType === 'percent') {
+    down = total * (downInput / 100);
+  } else { // 'amount'
+    down = downInput;
+  }
+  document.getElementById('downAmount').value = format(down);
+
+  const finance = total - down;
+  const rate = getVal('interestRate'); // Annual interest rate in percent
+  const years = getIntVal('termYears');
+  const months = years * 12;
+
+  // Ensure months is not zero to prevent division by zero
+  if (months === 0) {
+      // Reset calculated values if term is 0
+      document.getElementById('financeAmt').value = format(finance);
+      document.getElementById('intPA').value = format(0);
+      document.getElementById('intTotal').value = format(0);
+      document.getElementById('financeTotalWithInterest').value = format(finance);
+      document.getElementById('calculatedCommission').value = format(0);
+      document.getElementById('qsExtra').value = format(0);
+      document.getElementById('leaseInVat').value = format(0);
+      document.getElementById('leaseExVat').value = format(0);
+      document.getElementById('trRate').value = 'ไม่สามารถคำนวณ';
+      document.getElementById('qsTrDep').value = 'ไม่สามารถคำนวณ';
+      showDownPercent(); // Still show down percent
+      updateQsInfo(carInfo, car, discount, option, down, years, 0, 0); // Update QS info with 0 for TR etc.
+      return; // Exit function early
+  }
+
+
+  const intPA = finance * (rate / 100); // Annual interest amount
+  const intTotal = intPA * years; // Total interest amount
+  const financeTotalWithInterest = finance + intTotal;
+  document.getElementById('financeTotalWithInterest').value = format(financeTotalWithInterest);
+
+  const comBase = document.getElementById('comBase').value;
+  const comPercent = getIntVal('comPercent');
+  const extra = getVal('extra');
+  const comBaseVal = comBase === "finance" ? finance : intTotal;
+  const commission = Math.ceil(comBaseVal * (comPercent / 100)); // Commission amount
+  const qsExtra = commission + extra; // QS Extra cost is commission + extra
+
+  const leaseInVat = Math.ceil(financeTotalWithInterest / months); // Monthly payment including VAT
+  const leaseExVat = leaseInVat / 1.07; // Monthly payment excluding VAT (assuming 7% VAT)
+
+  // TR Calculation (Effective %)
+  // pv for IRR is the amount ORIX pays out initially + any commissions/extra costs (pre-VAT if commission is net, post-VAT if it's considered part of total cost).
+  // Assuming commission and extra are part of the initial "cost" to ORIX that they need to recover.
+  // The PV should be negative from ORIX's perspective (cash outflow).
+  const pvForIRR = -(finance + (commission * 1.07) + (extra * 1.07)); // This needs careful definition based on actual calculation
+  const tr = calculateIRR(months, leaseInVat, pvForIRR) * 12 * 100; // Annualized percentage
+
+
+  // TR Dep Calculation
+  // TR Dep = RATE((จำนวนปี*12),ค่างวดInVAT,((-total)+(-ค่าคอมที่คำนวน*1.07)+(-extra*1.07)),เงินดาวน์,0)*12
+  // This formula seems to imply 'total' (car - discount + option) is the initial PV,
+  // and 'เงินดาวน์' is the future value. This is a very specific calculation.
+  const pvForTRDep = -(total + (commission * 1.07) + (extra * 1.07));
+  const trDep = calculateIRR(months, leaseInVat, pvForTRDep, down, 0) * 12 * 100;
+
+  // Update output fields
+  document.getElementById('financeAmt').value = format(finance);
+  document.getElementById('intPA').value = format(intPA);
+  document.getElementById('intTotal').value = format(intTotal);
+  document.getElementById('calculatedCommission').value = format(commission);
+  document.getElementById('qsExtra').value = format(qsExtra);
+  document.getElementById('leaseInVat').value = format(leaseInVat);
+  document.getElementById('leaseExVat').value = format(leaseExVat);
+  document.getElementById('trRate').value = isNaN(tr) ? 'ไม่สามารถคำนวณ' : format4(tr);
+  document.getElementById('qsTrDep').value = isNaN(trDep) ? 'ไม่สามารถคำนวณ' : format4(trDep);
+
+  // Update QS Information section
+  updateQsInfo(carInfo, car, discount, option, down, years, tr, trDep);
+
+  showDownPercent();
+}
+
+function updateQsInfo(carInfo, car, discount, option, down, years, tr, trDep) {
+    document.getElementById('qsCarInfo').value = carInfo;
+    document.getElementById('qsCarPrice').value = format(car);
+    document.getElementById('qsDiscount').value = format(discount);
+    document.getElementById('qsOption').value = format(option);
+    document.getElementById('qsDownAmount').value = format(down);
+    document.getElementById('qsTrRate').value = isNaN(tr) ? 'ไม่สามารถคำนวณ' : format4(tr);
+    document.getElementById('qsTermYears').value = years;
+    document.getElementById('qsDeposit').value = format(down / 1.07); // Assuming Deposit is down payment EX-VAT
+    document.getElementById('qsRV').value = format4(car > 0 ? (down / car * 100) : 0) + '%'; // RV seems to be down% vs car price
+    document.getElementById('qsTrDep').value = isNaN(trDep) ? 'ไม่สามารถคำนวณ' : format4(trDep);
+}
+
+
+function calculateDownForTargetLease(targetLease) {
+  const getVal = id => uncomma(document.getElementById(id).value);
+  const getIntVal = id => parseInt(uncomma(document.getElementById(id).value)) || 0;
+
+  const car = getVal('carPrice');
+  const discount = getVal('discount');
+  const option = getVal('option');
+  const total = car - discount + option;
+  const rate = getVal('interestRate');
+  const years = getIntVal('termYears');
+  const months = years * 12;
+
+  if (months === 0 || rate === 0) {
+      alert("กรุณาระบุจำนวนปีและอัตราดอกเบี้ยก่อนคำนวณเงินดาวน์สำหรับค่างวดเป้าหมาย.");
+      return;
+  }
+
+  let low = 0;
+  let high = total; // Max possible down payment is total car price
+  let down = 0;
+  const epsilon = 0.1; // Tolerance for lease amount, e.g., 0.1 Baht
+
+  let attempts = 0;
+  const maxAttempts = 200; // Prevent infinite loops
+
+  while (attempts < maxAttempts) {
+    down = (low + high) / 2;
+
+    if (down < 0) down = 0; // Ensure down payment doesn't go negative
+    if (down > total) down = total; // Ensure down payment doesn't exceed total
+
+    const finance = total - down;
+    const intTotal = finance * (rate / 100) * years;
+    const currentLease = Math.ceil((finance + intTotal) / months);
+
+    // console.log(`Attempt: ${attempts}, Down: ${down.toFixed(2)}, Current Lease: ${currentLease.toFixed(2)}`);
+
+    if (Math.abs(currentLease - targetLease) < epsilon) {
+      break; // Found a satisfactory down payment
+    }
+
+    if (currentLease > targetLease) {
+      low = down; // Need more down payment to reduce lease
+    } else {
+      high = down; // Can afford less down payment
+    }
+    attempts++;
+  }
+
+  document.getElementById('downType').value = 'amount';
+  document.getElementById('downInput').value = format(down);
+  calculate(); // Recalculate all values based on the found down payment
+}
+
+
+// Function to save current data to localStorage and open new tab
+function generateQuotation() {
+    calculate(); // Ensure all values are up-to-date before saving
+
+    const data = {
+        carInfo: document.getElementById('carInfo').value,
+        carPrice: document.getElementById('carPrice').value,
+        discount: document.getElementById('discount').value,
+        option: document.getElementById('option').value,
+        totalAmount: document.getElementById('totalAmount').value,
+        downAmount: document.getElementById('downAmount').value,
+        downPercent: document.getElementById('downPercentDisplay').innerText,
+        financeAmt: document.getElementById('financeAmt').value,
+        interestRate: document.getElementById('interestRate').value,
+        termYears: document.getElementById('termYears').value,
+        leaseInVat: document.getElementById('leaseInVat').value,
+        // Add any other fields you want to show on the quotation
+    };
+
+    localStorage.setItem('quotationData', JSON.stringify(data));
+    window.open('quotation.html', '_blank'); // Open new tab with quotation page
+}
+
+
+// Event Listeners for input fields
+function addInputListeners(id) {
+  const el = document.getElementById(id);
+  // Using 'input' event for immediate updates (e.g., when typing)
+  // And 'change' event for when the value is committed (e.g., blur, enter) to re-calculate fully.
+  // For number inputs, 'change' is usually sufficient with blur.
+  // For text inputs like 'carInfo', only blur is needed for calculate().
+
+  if (id === 'carInfo') {
+      el.addEventListener('blur', calculate);
+  } else if (id === 'termYears' || id === 'comPercent') {
+      el.addEventListener('focus', () => {
+          el.value = uncomma(el.value); // Remove formatting on focus
+      });
+      el.addEventListener('blur', () => {
+          let val = uncomma(el.value);
+          el.value = formatNoDecimal(val); // Format back to integer on blur
+          calculate(); // Recalculate on blur
+      });
+      el.addEventListener('input', () => { // Allow quick calculation as user types numbers
+          calculate();
+      });
+  } else { // All other number inputs (carPrice, discount, option, downInput, interestRate, extra)
+      el.addEventListener('focus', () => {
+          el.value = uncomma(el.value); // Remove formatting on focus
+      });
+      el.addEventListener('blur', () => {
+          let val = uncomma(el.value);
+          el.value = format(val); // Format back to 2 decimal places on blur
+          calculate(); // Recalculate on blur
+      });
+      el.addEventListener('input', () => { // Allow quick calculation as user types numbers
+          calculate();
+      });
+  }
+}
+
+window.onload = () => {
+  // Attach listeners to all relevant input fields
+  ['carPrice', 'discount', 'option', 'downInput', 'interestRate', 'extra', 'termYears', 'comPercent', 'carInfo'].forEach(addInputListeners);
+
+  // Add change listeners for select elements
+  document.getElementById('downType').addEventListener('change', calculate);
+  document.getElementById('comBase').addEventListener('change', calculate);
+
+  // Initial calculation when the page loads to set default values
+  calculate();
+};
+</script>
+
+</body>
+</html>
